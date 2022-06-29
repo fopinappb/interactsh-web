@@ -205,6 +205,21 @@ export const register = (
           host,
           increment: 1,
           token,
+          telegram: {
+            enabled: false,
+            botToken: '',
+            chatId: '',
+          },
+          slack: {
+            enabled: false,
+            hookKey: '',
+            channel: '',
+          },
+          discord: {
+            enabled: false,
+            webhook: '',
+            channel: '',
+          },
           tabs: tabData,
           selectedTab: tabData[0],
           data: [],

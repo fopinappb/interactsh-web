@@ -17,9 +17,24 @@ export const defaultStoredData: StoredData = {
   notes: [],
   view: "up_and_down",
   increment: 1,
-  host: "interactsh.com",
+  host: "interact.sh",
   tabs: [],
   token: "",
+  telegram: {
+    enabled: false,
+    botToken: '',
+    chatId: '',
+  },
+  slack: {
+    enabled: false,
+    hookKey: '',
+    channel: '',
+  },
+  discord: {
+    enabled: false,
+    webhook: '',
+    channel: '',
+  },
   selectedTab: {
     "unique-id": "",
     correlationId: "",

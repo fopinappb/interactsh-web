@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-expressions */
+/* eslint-disable camelcase */
 import React, { useEffect, useState } from "react";
 
 import format from "date-fns/format";
@@ -22,6 +24,7 @@ import {
   clearIntervals,
   register,
 } from "lib";
+import { notifyTelegram, notifySlack, notifyDiscord } from "lib/notify";
 import Data from "lib/types/data";
 import { StoredData } from "lib/types/storedData";
 import Tab from "lib/types/tab";
@@ -34,12 +37,14 @@ import { writeStoredData, getStoredData, defaultStoredData } from "../../lib/loc
 import RequestDetailsWrapper from "./requestDetailsWrapper";
 import RequestsTableWrapper from "./requestsTableWrapper";
 
+
 const HomePage = () => {
   const [aboutPopupVisibility, setAboutPopupVisibility] = useState<boolean>(false);
   const [filteredData, setFilteredData] = useState<Array<Data>>([]);
   const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [isResetPopupDialogVisible, setIsResetPopupDialogVisible] = useState<boolean>(false);
+  const [isNotificationsDialogVisible, setIsNotificationsDialogVisible] = useState<boolean>(false);
   const [loaderAnimationMode, setLoaderAnimationMode] = useState<string>("loading");
   const [selectedInteraction, setSelectedInteraction] = useState<string | null>(null);
   const [selectedInteractionData, setSelectedInteractionData] = useState<Data | null>(null);
@@ -48,6 +53,10 @@ const HomePage = () => {
 
   const handleResetPopupDialogVisibility = () => {
     setIsResetPopupDialogVisible(!isResetPopupDialogVisible);
+  };
+  
+  const handleNotificationsDialogVisibility = () => {
+    setIsNotificationsDialogVisible(!isNotificationsDialogVisible);
   };
 
   const handleCustomHostDialogVisibility = () => {
@@ -89,6 +98,7 @@ const HomePage = () => {
       selectedTab: tabData,
       increment: newIncrement,
     });
+    setSelectedInteraction(null);
   };
 
   // "Show or hide notes" function
@@ -200,6 +210,19 @@ const HomePage = () => {
             decryptedAESKey = decryptAESKey(privateKey, pollData.aes_key);
           }
           const processedData = processData(decryptedAESKey, pollData);
+
+          // eslint-disable-next-line array-callback-return
+          const formattedString = processedData.map((item: any) => {
+            const telegramMsg = `<i>[${item['full-id']}]</i> Received <i>${item.protocol.toUpperCase()}</i> interaction from <b><a href="https://ipinfo.io/${item['remote-address']}">${item['remote-address']}</a></b> at <i>${format(new Date(item.timestamp), "yyyy-mm-dd_hh:mm:ss")}</i>`
+            storedData.telegram.enabled && notifyTelegram(telegramMsg, storedData.telegram.botToken, storedData.telegram.chatId, 'HTML')
+            return {
+              slack: `[${item['full-id']}] Received ${item.protocol.toUpperCase()} interaction from \n <https://ipinfo.io/${item['remote-address']}|${item['remote-address']}> at ${format(new Date(item.timestamp), "yyyy-mm-dd_hh:mm:ss")}`,
+              discord: `[${item['full-id']}] Received ${item.protocol.toUpperCase()} interaction from \n [${item['remote-address']}](https://ipinfo.io/${item['remote-address']}) at ${format(new Date(item.timestamp), "yyyy-mm-dd_hh:mm:ss")}`,
+            }
+          })
+          storedData.slack.enabled && notifySlack(formattedString, storedData.slack.hookKey, storedData.slack.channel)
+          storedData.discord.enabled && notifyDiscord(formattedString, storedData.discord.webhook)
+
           const combinedData: Data[] = data.concat(processedData);
 
           setStoredData({
@@ -311,7 +334,9 @@ const HomePage = () => {
           host={storedData.host}
           handleThemeSelection={handleThemeSelection}
           isResetPopupDialogVisible={isResetPopupDialogVisible}
+          isNotificationsDialogVisible={isNotificationsDialogVisible}
           handleResetPopupDialogVisibility={handleResetPopupDialogVisibility}
+          handleNotificationsDialogVisibility={handleNotificationsDialogVisibility}
           isCustomHostDialogVisible={isCustomHostDialogVisible}
           handleCustomHostDialogVisibility={handleCustomHostDialogVisibility}
         />
@@ -419,10 +444,10 @@ const HomePage = () => {
                 )}
                 <div className="result_info">
                   From IP address
-                  <span>{selectedInteractionData["remote-address"]}</span>
+                  <span>: <a target="__blank" href={`https://ipinfo.io/${selectedInteractionData["remote-address"]}`}>{selectedInteractionData["remote-address"]}</a></span>
                   {` at `}
                   <span>
-                    {format(new Date(selectedInteractionData.timestamp), "yyyy-mm-dd_hh:mm")}
+                    {format(new Date(selectedInteractionData.timestamp), "yyyy-MM-dd_hh:mm")}
                   </span>
                 </div>
               </div>
